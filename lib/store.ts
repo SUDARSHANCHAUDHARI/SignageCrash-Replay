@@ -1,17 +1,14 @@
 import type { CrashReport } from './types'
+import { getCrashRepository } from './storage'
 
-const crashes = new Map<string, CrashReport>()
-
-export function addCrash(c: CrashReport): void {
-  crashes.set(c.id, c)
+export async function addCrash(report: CrashReport): Promise<void> {
+  await getCrashRepository().add(report)
 }
 
-export function getCrash(id: string): CrashReport | undefined {
-  return crashes.get(id)
+export async function getCrash(id: string): Promise<CrashReport | undefined> {
+  return getCrashRepository().get(id)
 }
 
-export function listCrashes(): CrashReport[] {
-  return Array.from(crashes.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
+export async function listCrashes(): Promise<CrashReport[]> {
+  return getCrashRepository().list()
 }

@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const crash = getCrash(id)
+  const crash = await getCrash(id)
   if (!crash) {
     return NextResponse.json({ error: 'Crash report not found' }, { status: 404 })
   }
