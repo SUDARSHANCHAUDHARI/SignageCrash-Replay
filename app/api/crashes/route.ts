@@ -5,6 +5,11 @@ import { chat } from '@/lib/ai'
 import { addCrash, listCrashes } from '@/lib/store'
 import type { CrashReport, DevicePlatform, CrashSeverity } from '@/lib/types'
 
+const MAX_LOG_CHARS = 300_000
+const MAX_IMAGE_COUNT = 5
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const ACCEPTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
+
 const SYSTEM_PROMPT = `You are an expert digital signage device reliability engineer with deep experience in diagnosing crashes on SCOS, Android, Fire OS, Tizen, webOS, and Windows signage players. Analyze the provided logs and crash context, then return a JSON object with the following fields:
 - rootCause: concise technical explanation of the crash root cause
 - customerExplanation: plain English explanation suitable for a non-technical customer (2-3 sentences)
@@ -61,10 +66,24 @@ export async function POST(request: NextRequest) {
     if (!logs || typeof logs !== 'string') {
       return NextResponse.json({ error: 'logs is required' }, { status: 400 })
     }
+    if (logs.length > MAX_LOG_CHARS) {
+      return NextResponse.json({ error: `logs must be ${MAX_LOG_CHARS} characters or fewer` }, { status: 413 })
+    }
+    if (imageFiles.length > MAX_IMAGE_COUNT) {
+      return NextResponse.json({ error: `maximum ${MAX_IMAGE_COUNT} screenshots allowed` }, { status: 400 })
+    }
+    for (const file of imageFiles) {
+      if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
+        return NextResponse.json({ error: 'screenshots must be PNG, JPEG, or WebP' }, { status: 400 })
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        return NextResponse.json({ error: 'each screenshot must be 5MB or smaller' }, { status: 413 })
+      }
+    }
 
     // Read images as base64
     const screenshots: string[] = []
-    for (const file of imageFiles.slice(0, 5)) {
+    for (const file of imageFiles) {
       const buffer = await file.arrayBuffer()
       const base64 = Buffer.from(buffer).toString('base64')
       const dataUrl = `data:${file.type};base64,${base64}`
@@ -124,7 +143,7 @@ ${events.slice(0, 50).map(e => `[${e.level}] ${e.category}: ${e.message.slice(0,
       createdAt: new Date().toISOString(),
     }
 
-    addCrash(report)
+    await addCrash(report)
 
     return NextResponse.json(report, { status: 201 })
   } catch (error) {
@@ -134,5 +153,5 @@ ${events.slice(0, 50).map(e => `[${e.level}] ${e.category}: ${e.message.slice(0,
 }
 
 export async function GET() {
-  return NextResponse.json(listCrashes())
+  return NextResponse.json(await listCrashes())
 }

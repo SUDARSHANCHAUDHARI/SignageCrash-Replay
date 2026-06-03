@@ -46,6 +46,7 @@ yarn-error.log*
 lerna-debug.log*
 
 # Runtime data
+.signage-data/
 pids
 *.pid
 *.seed
