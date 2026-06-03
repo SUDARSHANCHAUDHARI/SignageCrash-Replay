@@ -34,6 +34,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `AI_PROVIDER` | No | `claude` (default) or `openai` |
 | `ANTHROPIC_API_KEY` | If using Claude | Anthropic API key |
 | `OPENAI_API_KEY` | If using OpenAI | OpenAI API key |
+| `SIGNAGE_DATA_DIR` | Production | Persistent data directory, for example `.signage-data` or a mounted volume path |
+| `SIGNAGE_STORAGE_DRIVER` | No | `file` by default; set `memory` only for disposable demos |
 
 ## Tech Stack
 
@@ -42,12 +44,12 @@ Open [http://localhost:3000](http://localhost:3000).
 - **Styling:** Tailwind CSS
 - **Package manager:** pnpm
 - **AI:** Claude claude-sonnet-4-6 via `@anthropic-ai/sdk` or GPT-4o via `openai`
-- **Storage:** In-memory (Phase 1 — resets on server restart)
+- **Storage:** File-backed JSON repository using `SIGNAGE_DATA_DIR`
 
 ## Phase Roadmap
 
-- **Phase 1 (current):** Manual upload, in-memory storage, AI analysis
-- **Phase 2:** Device agent SDK, persistent database
+- **Phase 1 (current):** Manual upload, durable file-backed storage, AI analysis
+- **Phase 2:** Device agent SDK, managed database adapter
 - **Phase 3:** Real-time streaming, team collaboration, alert rules
 
 ## License
