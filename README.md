@@ -52,6 +52,19 @@ Open [http://localhost:3000](http://localhost:3000).
 - **Phase 2:** Device agent SDK, managed database adapter
 - **Phase 3:** Real-time streaming, team collaboration, alert rules
 
+## Production Checks
+
+```bash
+pnpm type-check
+pnpm build
+```
+
+## Release Notes
+
+- Deploy with `SIGNAGE_DATA_DIR` set to a persistent writable volume.
+- Keep `SIGNAGE_STORAGE_DRIVER=file` for production.
+- Do not commit `.env`, `.env.local`, uploaded screenshots, or generated `.signage-data` files.
+
 ## License
 
 MIT
