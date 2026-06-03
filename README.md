@@ -1,56 +1,69 @@
 # SignageCrash Replay
 
-AI-powered crash replay tool for digital signage teams. Upload screenshots and paste device logs — the AI reconstructs the crash timeline, identifies the root cause, and generates a customer-ready explanation.
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
-## What it does
+Crash investigation tool for digital signage teams. Upload screenshots, paste logs, and generate a timeline, root cause, customer explanation, and engineering notes.
 
-- Accepts manual screenshot uploads (up to 5) and raw device logs
-- Parses logs into a structured event timeline with severity detection
-- Uses Claude or GPT-4o to identify root cause, affected system, and confidence level
-- Generates plain-English customer explanations you can copy immediately
-- Provides ordered resolution steps for your engineering team
-- Exports full crash reports as Markdown
+## What It Does
 
-## Getting Started
+SignageCrash Replay helps support and engineering teams reconstruct signage failures from screenshots and logs. It turns a messy crash report into an ordered diagnosis that can be shared with customers or used internally.
+
+## Features
+
+- Upload up to 5 screenshots per crash report.
+- Paste raw player, device, or browser logs.
+- Parse logs into a structured event timeline.
+- Classify severity and affected system.
+- Generate root cause, customer explanation, developer notes, and recommended steps.
+- Store crash reports with file-backed durable storage.
+- Export crash reports as Markdown.
+
+## Tech Stack
+
+- Next.js 15 App Router
+- React 19
+- TypeScript strict mode
+- Tailwind CSS
+- Anthropic SDK and OpenAI SDK
+- File-backed JSON storage through a repository interface
+
+## Setup
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Copy env file and add your API key
 cp .env.example .env.local
-# Edit .env.local: set ANTHROPIC_API_KEY or OPENAI_API_KEY
-
-# Start dev server
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open `http://localhost:3000`.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
-| `AI_PROVIDER` | No | `claude` (default) or `openai` |
-| `ANTHROPIC_API_KEY` | If using Claude | Anthropic API key |
-| `OPENAI_API_KEY` | If using OpenAI | OpenAI API key |
-| `SIGNAGE_DATA_DIR` | Production | Persistent data directory, for example `.signage-data` or a mounted volume path |
-| `SIGNAGE_STORAGE_DRIVER` | No | `file` by default; set `memory` only for disposable demos |
+| `AI_PROVIDER` | No | `claude` by default, or `openai`. |
+| `ANTHROPIC_API_KEY` | If using Claude | Anthropic API key. |
+| `OPENAI_API_KEY` | If using OpenAI | OpenAI API key. |
+| `SIGNAGE_DATA_DIR` | Production | Persistent writable data directory. |
+| `SIGNAGE_STORAGE_DRIVER` | No | `file` by default. Use `memory` only for demos. |
 
-## Tech Stack
+## Production Storage
 
-- **Framework:** Next.js 15 (App Router, Turbopack)
-- **Language:** TypeScript (strict mode)
-- **Styling:** Tailwind CSS
-- **Package manager:** pnpm
-- **AI:** Claude claude-sonnet-4-6 via `@anthropic-ai/sdk` or GPT-4o via `openai`
-- **Storage:** File-backed JSON repository using `SIGNAGE_DATA_DIR`
+Production uses file-backed JSON under `SIGNAGE_DATA_DIR`.
 
-## Phase Roadmap
+- Mount `SIGNAGE_DATA_DIR` as persistent writable storage.
+- Keep `SIGNAGE_STORAGE_DRIVER=file` in production.
+- Do not store generated reports or uploaded screenshots in git.
 
-- **Phase 1 (current):** Manual upload, durable file-backed storage, AI analysis
-- **Phase 2:** Device agent SDK, managed database adapter
-- **Phase 3:** Real-time streaming, team collaboration, alert rules
+## Roadmap
+
+| Phase | Status | Scope |
+|---|---|---|
+| Phase 1 | Ready | Manual upload, durable report storage, AI analysis. |
+| Phase 2 | Planned | Device agent SDK and managed database adapter. |
+| Phase 3 | Planned | Streaming, collaboration, and alert rules. |
 
 ## Production Checks
 
@@ -61,9 +74,13 @@ pnpm build
 
 ## Release Notes
 
-- Deploy with `SIGNAGE_DATA_DIR` set to a persistent writable volume.
-- Keep `SIGNAGE_STORAGE_DRIVER=file` for production.
-- Do not commit `.env`, `.env.local`, uploaded screenshots, or generated `.signage-data` files.
+- Keep AI provider keys in the deployment environment.
+- Verify upload limits before increasing screenshot count or size.
+- Verify the persistent storage volume before public release.
+
+## Author
+
+Built by [Sudarshan Chaudhari](https://github.com/SUDARSHANCHAUDHARI) for **SudarshanTechLabs**.
 
 ## License
 
