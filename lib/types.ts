@@ -1,5 +1,5 @@
 export type CrashSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-export type DevicePlatform = 'SCOS' | 'WINDOWS' | 'ANDROID' | 'FIRE_OS' | 'TIZEN' | 'WEBOS' | 'OTHER'
+export type DevicePlatform = 'SIGNAGE_DEVICE' | 'WINDOWS' | 'ANDROID' | 'FIRE_OS' | 'TIZEN' | 'WEBOS' | 'OTHER'
 export type CrashStatus = 'OPEN' | 'INVESTIGATING' | 'RESOLVED'
 
 export interface TimelineEvent {

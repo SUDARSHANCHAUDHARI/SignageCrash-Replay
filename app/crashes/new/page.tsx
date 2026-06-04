@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { DevicePlatform } from '@/lib/types'
 
 const PLATFORMS: Array<{ value: DevicePlatform; label: string }> = [
-  { value: 'SCOS', label: 'ScreenCloud OS (SCOS)' },
+  { value: 'SIGNAGE_DEVICE', label: 'Signage device' },
   { value: 'WINDOWS', label: 'Windows' },
   { value: 'ANDROID', label: 'Android' },
   { value: 'FIRE_OS', label: 'Fire OS' },
@@ -25,7 +25,7 @@ export default function NewCrashPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [title, setTitle] = useState('')
-  const [platform, setPlatform] = useState<DevicePlatform>('SCOS')
+  const [platform, setPlatform] = useState<DevicePlatform>('SIGNAGE_DEVICE')
   const [logs, setLogs] = useState('')
   const [notes, setNotes] = useState('')
   const [images, setImages] = useState<ImagePreview[]>([])

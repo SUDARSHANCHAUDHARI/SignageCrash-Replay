@@ -10,7 +10,7 @@ const MAX_IMAGE_COUNT = 5
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 const ACCEPTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
 
-const SYSTEM_PROMPT = `You are an expert digital signage device reliability engineer with deep experience in diagnosing crashes on SCOS, Android, Fire OS, Tizen, webOS, and Windows signage players. Analyze the provided logs and crash context, then return a JSON object with the following fields:
+const SYSTEM_PROMPT = `You are an expert digital signage device reliability engineer with deep experience in diagnosing crashes on signage devices, Android, Fire OS, Tizen, webOS, and Windows signage players. Analyze the provided logs and crash context, then return a JSON object with the following fields:
 - rootCause: concise technical explanation of the crash root cause
 - customerExplanation: plain English explanation suitable for a non-technical customer (2-3 sentences)
 - developerNotes: technical notes for the engineering team including stack traces, relevant modules, and failure patterns
