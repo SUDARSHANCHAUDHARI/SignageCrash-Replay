@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DevicePlatform } from '@/lib/types'
+import ApiKeySettings from '@/components/ApiKeySettings'
+import { getAiHeaders } from '@/lib/apiKey'
 
 const PLATFORMS: Array<{ value: DevicePlatform; label: string }> = [
   { value: 'SIGNAGE_DEVICE', label: 'Signage device' },
@@ -69,7 +71,7 @@ export default function NewCrashPage() {
       formData.append('notes', notes)
       images.forEach(img => formData.append('images', img.file))
 
-      const res = await fetch('/api/crashes', { method: 'POST', body: formData })
+      const res = await fetch('/api/crashes', { method: 'POST', body: formData, headers: { ...getAiHeaders() } })
       if (!res.ok) {
         const body = await res.json() as { error?: string }
         throw new Error(body.error ?? `HTTP ${res.status}`)
@@ -85,7 +87,10 @@ export default function NewCrashPage() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Report a Crash</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-3xl font-bold text-white">Report a Crash</h1>
+          <ApiKeySettings />
+        </div>
         <p className="text-gray-400 mt-1">
           Upload screenshots and paste logs — AI will reconstruct the timeline.
         </p>

@@ -1,15 +1,25 @@
-const provider = process.env.AI_PROVIDER ?? 'claude'
+export type AIProvider = 'claude' | 'openai'
 
-export async function chat(systemPrompt: string, userMessage: string): Promise<string> {
-  if (provider === 'openai') {
-    return chatOpenAI(systemPrompt, userMessage)
-  }
-  return chatClaude(systemPrompt, userMessage)
+export interface AICredentials {
+  provider: AIProvider
+  apiKey: string
 }
 
-async function chatClaude(systemPrompt: string, userMessage: string): Promise<string> {
+export async function chat(
+  systemPrompt: string,
+  userMessage: string,
+  credentials: AICredentials,
+): Promise<string> {
+  if (!credentials?.apiKey) throw new Error('Missing API key')
+  if (credentials.provider === 'openai') {
+    return chatOpenAI(systemPrompt, userMessage, credentials.apiKey)
+  }
+  return chatClaude(systemPrompt, userMessage, credentials.apiKey)
+}
+
+async function chatClaude(systemPrompt: string, userMessage: string, apiKey: string): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey })
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
@@ -23,9 +33,9 @@ async function chatClaude(systemPrompt: string, userMessage: string): Promise<st
   return block.text
 }
 
-async function chatOpenAI(systemPrompt: string, userMessage: string): Promise<string> {
+async function chatOpenAI(systemPrompt: string, userMessage: string, apiKey: string): Promise<string> {
   const { default: OpenAI } = await import('openai')
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const client = new OpenAI({ apiKey })
 
   const response = await client.chat.completions.create({
     model: 'gpt-4o',

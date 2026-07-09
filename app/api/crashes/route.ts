@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 import { parseLogs } from '@/lib/logParser'
-import { chat } from '@/lib/ai'
+import { chat, type AIProvider } from '@/lib/ai'
 import { addCrash, listCrashes } from '@/lib/store'
 import type { CrashReport, DevicePlatform, CrashSeverity } from '@/lib/types'
 
@@ -49,6 +49,10 @@ function parseAIResponse(raw: string): AIAnalysis {
 
 export async function POST(request: NextRequest) {
   try {
+    // Bring-your-own-key: supplied by the user per request, never stored server-side.
+    const apiKey = request.headers.get('x-api-key') ?? ''
+    const provider: AIProvider = request.headers.get('x-ai-provider') === 'openai' ? 'openai' : 'claude'
+
     const formData = await request.formData()
 
     const title = formData.get('title') as string | null
@@ -110,7 +114,7 @@ ${events.slice(0, 50).map(e => `[${e.level}] ${e.category}: ${e.message.slice(0,
     // Call AI
     let analysis: AIAnalysis
     try {
-      const raw = await chat(SYSTEM_PROMPT, userMessage)
+      const raw = await chat(SYSTEM_PROMPT, userMessage, { provider, apiKey })
       analysis = parseAIResponse(raw)
     } catch (aiError) {
       console.error('AI analysis failed:', aiError)
