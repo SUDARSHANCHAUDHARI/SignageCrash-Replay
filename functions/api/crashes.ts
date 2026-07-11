@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+// Cloudflare Pages Function — serves POST + GET /api/crashes.
+// Ported from app/api/crashes/route.ts. Crash reports persist in Cloudflare KV
+// (binding: SIGNAGE_KV) instead of the filesystem.
 import { nanoid } from 'nanoid'
-import { parseLogs } from '@/lib/logParser'
-import { chat, type AIProvider } from '@/lib/ai'
-import { addCrash, listCrashes } from '@/lib/store'
-import type { CrashReport, DevicePlatform, CrashSeverity } from '@/lib/types'
+import { parseLogs } from '../../lib/logParser'
+import { chat, type AIProvider } from '../../lib/ai'
+import { KVCrashRepository, type KVNamespaceLike } from '../../lib/storage/kv'
+import type { CrashReport, DevicePlatform, CrashSeverity } from '../../lib/types'
 
 const MAX_LOG_CHARS = 300_000
 const MAX_IMAGE_COUNT = 5
@@ -31,11 +33,16 @@ interface AIAnalysis {
   severity: CrashSeverity
 }
 
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  })
+}
+
 function parseAIResponse(raw: string): AIAnalysis {
-  // Strip markdown fences if present
   const cleaned = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
   const parsed = JSON.parse(cleaned) as Partial<AIAnalysis>
-
   return {
     rootCause: parsed.rootCause ?? 'Unable to determine root cause',
     customerExplanation: parsed.customerExplanation ?? 'An unexpected error occurred on your device.',
@@ -47,57 +54,42 @@ function parseAIResponse(raw: string): AIAnalysis {
   }
 }
 
-export async function POST(request: NextRequest) {
+type Ctx = { request: Request; env: { SIGNAGE_KV: KVNamespaceLike } }
+
+export const onRequestPost = async (context: Ctx): Promise<Response> => {
   try {
+    const request = context.request
     // Bring-your-own-key: supplied by the user per request, never stored server-side.
     const apiKey = request.headers.get('x-api-key') ?? ''
     const provider: AIProvider = request.headers.get('x-ai-provider') === 'openai' ? 'openai' : 'claude'
 
     const formData = await request.formData()
-
     const title = formData.get('title') as string | null
     const platform = formData.get('platform') as string | null
     const logs = formData.get('logs') as string | null
     const notes = formData.get('notes') as string | null
     const imageFiles = formData.getAll('images') as File[]
 
-    if (!title || typeof title !== 'string') {
-      return NextResponse.json({ error: 'title is required' }, { status: 400 })
-    }
-    if (!platform || typeof platform !== 'string') {
-      return NextResponse.json({ error: 'platform is required' }, { status: 400 })
-    }
-    if (!logs || typeof logs !== 'string') {
-      return NextResponse.json({ error: 'logs is required' }, { status: 400 })
-    }
-    if (logs.length > MAX_LOG_CHARS) {
-      return NextResponse.json({ error: `logs must be ${MAX_LOG_CHARS} characters or fewer` }, { status: 413 })
-    }
-    if (imageFiles.length > MAX_IMAGE_COUNT) {
-      return NextResponse.json({ error: `maximum ${MAX_IMAGE_COUNT} screenshots allowed` }, { status: 400 })
-    }
+    if (!title || typeof title !== 'string') return json({ error: 'title is required' }, 400)
+    if (!platform || typeof platform !== 'string') return json({ error: 'platform is required' }, 400)
+    if (!logs || typeof logs !== 'string') return json({ error: 'logs is required' }, 400)
+    if (logs.length > MAX_LOG_CHARS) return json({ error: `logs must be ${MAX_LOG_CHARS} characters or fewer` }, 413)
+    if (imageFiles.length > MAX_IMAGE_COUNT) return json({ error: `maximum ${MAX_IMAGE_COUNT} screenshots allowed` }, 400)
     for (const file of imageFiles) {
-      if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
-        return NextResponse.json({ error: 'screenshots must be PNG, JPEG, or WebP' }, { status: 400 })
-      }
-      if (file.size > MAX_IMAGE_BYTES) {
-        return NextResponse.json({ error: 'each screenshot must be 5MB or smaller' }, { status: 413 })
-      }
+      if (!ACCEPTED_IMAGE_TYPES.has(file.type)) return json({ error: 'screenshots must be PNG, JPEG, or WebP' }, 400)
+      if (file.size > MAX_IMAGE_BYTES) return json({ error: 'each screenshot must be 5MB or smaller' }, 413)
     }
 
-    // Read images as base64
+    // Read images as base64 (nodejs_compat provides Buffer)
     const screenshots: string[] = []
     for (const file of imageFiles) {
       const buffer = await file.arrayBuffer()
       const base64 = Buffer.from(buffer).toString('base64')
-      const dataUrl = `data:${file.type};base64,${base64}`
-      screenshots.push(dataUrl)
+      screenshots.push(`data:${file.type};base64,${base64}`)
     }
 
-    // Parse logs
     const { events, severity: parsedSeverity } = parseLogs(logs)
 
-    // Build AI prompt
     const userMessage = `
 Title: ${title}
 Platform: ${platform}
@@ -111,7 +103,6 @@ Parsed events summary:
 ${events.slice(0, 50).map(e => `[${e.level}] ${e.category}: ${e.message.slice(0, 200)}`).join('\n')}
 `.trim()
 
-    // Call AI
     let analysis: AIAnalysis
     try {
       const raw = await chat(SYSTEM_PROMPT, userMessage, { provider, apiKey })
@@ -147,15 +138,15 @@ ${events.slice(0, 50).map(e => `[${e.level}] ${e.category}: ${e.message.slice(0,
       createdAt: new Date().toISOString(),
     }
 
-    await addCrash(report)
-
-    return NextResponse.json(report, { status: 201 })
+    await new KVCrashRepository(context.env.SIGNAGE_KV).add(report)
+    return json(report, 201)
   } catch (error) {
     console.error('POST /api/crashes error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return json({ error: 'Internal server error' }, 500)
   }
 }
 
-export async function GET() {
-  return NextResponse.json(await listCrashes())
+export const onRequestGet = async (context: Ctx): Promise<Response> => {
+  const crashes = await new KVCrashRepository(context.env.SIGNAGE_KV).list()
+  return json(crashes)
 }

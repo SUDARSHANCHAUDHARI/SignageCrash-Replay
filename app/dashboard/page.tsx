@@ -76,7 +76,7 @@ export default function DashboardPage() {
       {crashes.length > 0 && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {crashes.map(crash => (
-            <Link key={crash.id} href={`/crashes/${crash.id}`}>
+            <Link key={crash.id} href={`/crashes/view?id=${crash.id}`}>
               <div className="bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-5 transition-colors cursor-pointer h-full">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <span
