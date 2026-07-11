@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { CrashReport, CrashSeverity, TimelineEvent } from '@/lib/types'
 
 const SEVERITY_COLORS: Record<CrashSeverity, string> = {
@@ -63,16 +63,17 @@ function exportMarkdown(crash: CrashReport): void {
   URL.revokeObjectURL(url)
 }
 
-export default function CrashDetailPage() {
-  const params = useParams<{ id: string }>()
+function CrashDetailView() {
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id') ?? ''
   const [crash, setCrash] = useState<CrashReport | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!params.id) return
-    fetch(`/api/crashes/${params.id}`)
+    if (!id) return
+    fetch(`/api/crashes/${id}`)
       .then(r => {
         if (!r.ok) throw new Error(r.status === 404 ? 'Report not found' : `HTTP ${r.status}`)
         return r.json() as Promise<CrashReport>
@@ -85,7 +86,7 @@ export default function CrashDetailPage() {
         setError((err as Error).message)
         setLoading(false)
       })
-  }, [params.id])
+  }, [id])
 
   function handleCopy() {
     if (!crash) return
@@ -232,5 +233,13 @@ export default function CrashDetailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CrashDetailPage() {
+  return (
+    <Suspense>
+      <CrashDetailView />
+    </Suspense>
   )
 }

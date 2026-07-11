@@ -77,7 +77,7 @@ export default function NewCrashPage() {
         throw new Error(body.error ?? `HTTP ${res.status}`)
       }
       const result = await res.json() as { id: string }
-      router.push(`/crashes/${result.id}`)
+      router.push(`/crashes/view?id=${result.id}`)
     } catch (err) {
       setError((err as Error).message)
       setSubmitting(false)
