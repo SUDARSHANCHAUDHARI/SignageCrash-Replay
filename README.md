@@ -26,47 +26,38 @@ SignageCrash Replay helps support and engineering teams reconstruct signage fail
 - React 19
 - TypeScript strict mode
 - Tailwind CSS
-- Anthropic SDK and OpenAI SDK
-- File-backed JSON storage through a repository interface
+- Anthropic SDK and OpenAI SDK (called with the visitor's own key)
+- Cloudflare KV storage through a repository interface
 
 ## Setup
 
 ```bash
 pnpm install
-cp .env.example .env.local
 pnpm dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. No `.env` is required — see Configuration below.
 
-## Environment Variables
+## Configuration
 
-| Variable | Required | Description |
-|---|---|---|
-| `AI_PROVIDER` | No | `claude` by default, or `openai`. |
-| `ANTHROPIC_API_KEY` | If using Claude | Anthropic API key. |
-| `OPENAI_API_KEY` | If using OpenAI | OpenAI API key. |
-| `SIGNAGE_DATA_DIR` | Production | Persistent writable data directory. |
-| `SIGNAGE_STORAGE_DRIVER` | No | `file` by default. Use `memory` only for demos. |
+**AI is bring-your-own-key.** There is no server-side API key. Each visitor adds
+their own Anthropic or OpenAI key in the app's Settings; it is stored only in
+their browser and sent per request (`x-api-key` header), so hosting the app
+publicly can never bill your account. Without a key the analysis falls back to a
+parsed-log summary.
 
-## Production Storage
+**Storage:** crash reports persist in **Cloudflare KV** (binding `SIGNAGE_KV`).
+For local development the repository interface also ships `file` and `memory`
+drivers, selectable via `SIGNAGE_STORAGE_DRIVER`.
 
-Production uses file-backed JSON under `SIGNAGE_DATA_DIR`.
+## Deployment
 
-- Mount `SIGNAGE_DATA_DIR` as persistent writable storage.
-- Keep `SIGNAGE_STORAGE_DRIVER=file` in production.
-- Do not store generated reports or uploaded screenshots in git.
+Deployed on **Cloudflare Pages** as a static export + Pages Functions:
 
-### Hosting Notes
-
-File-backed storage is suitable for a VPS, Docker host, or platform with a persistent disk. For example:
-
-```env
-SIGNAGE_STORAGE_DRIVER=file
-SIGNAGE_DATA_DIR=/data/signage-crash-replay
-```
-
-If you deploy on Vercel or another serverless host, do not rely on local file writes for saved crash reports. Serverless filesystems can reset between deployments or function instances. For that setup, use this release as the public app/code release and add a managed database adapter before depending on saved report history in production.
+- Build command `npx next build`, output directory `out`.
+- Compatibility flag `nodejs_compat` (for the AI SDKs and `Buffer`).
+- Bind a KV namespace as `SIGNAGE_KV`.
+- Live at `signagecrashreplay.sudarshantechlabs.com`.
 
 ## Roadmap
 
