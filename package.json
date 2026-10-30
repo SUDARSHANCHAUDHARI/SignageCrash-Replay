@@ -11,7 +11,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
     "nanoid": "^5.1.16",
-    "next": "15.3.2",
+    "next": "15.5.28",
     "openai": "^4.104.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
